@@ -1,19 +1,11 @@
+import os
 import time
 import datetime
 import subprocess
 from pprint import pprint
-import locale
-import pytz
 import telepot
 import speech_recognition
 from redacted import API_KEY
-
-utc = pytz.timezone('CET')
-
-try:
-    locale.setlocale(locale.LC_TIME, "nl_NL.utf8")
-except locale.Error:
-    locale.setlocale(locale.LC_TIME, "nl_NL")
 
 
 def chat(msg):
@@ -27,17 +19,19 @@ def chat(msg):
 
 
 def listen(msg):
-    preview = bot.sendMessage(msg['chat']['id'], "Downloading...")
+    """listen to voice recording"""
+    preview = bot.sendMessage(msg['chat']['id'], "Downloaden...")
     msg_identifier = telepot.message_identifier(preview)
     file_path_ogg = download(msg)
-    bot.editMessageText(msg_identifier, "Transcoding...")
+    bot.editMessageText(msg_identifier, "Transcoden...")
     file_path_wav = transcode(file_path_ogg)
-    bot.editMessageText(msg_identifier, "Transcribing...")
+    bot.editMessageText(msg_identifier, "Transcriben...")
     text = transcribe(file_path_wav)
     bot.editMessageText(msg_identifier, text)
 
 
 def download(msg) -> str:
+    """download OGG file"""
     file_name = '_'.join([msg['from'].get('first_name'),
                           msg['from'].get('last_name'),
                           datetime.datetime.now().strftime('%c').replace(' ', '').replace(':', '')])
@@ -47,12 +41,15 @@ def download(msg) -> str:
 
 
 def transcode(ogg_file: str) -> str:
+    """transcode OGG file to WAV file"""
     new_path = ogg_file.replace(".ogg", ".wav")
     subprocess.run(['ffmpeg', '-i', ogg_file, new_path])
+    os.remove(ogg_file)
     return new_path
 
 
 def transcribe(wav_file: str) -> str:
+    """transcribe WAV file"""
     audio_file = speech_recognition. AudioFile(wav_file)
     with audio_file as source:
         audio = recognizer.record(source)
@@ -66,9 +63,13 @@ def transcribe(wav_file: str) -> str:
 
 
 if __name__ == '__main__':
-    print('Listening...')
+    # Ensure voice/ dir
+    if not os.path.exists("voice/"):
+        os.makedirs("voice/")
+
     bot = telepot.Bot(API_KEY)
     recognizer = speech_recognition.Recognizer()
     bot.message_loop({'chat': chat})
+    print('Listening...')
     while 1:
         time.sleep(10)
