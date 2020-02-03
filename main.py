@@ -6,7 +6,11 @@ import subprocess
 from pprint import pprint
 import telepot
 import speech_recognition
+import language
 from redacted import API_KEY
+
+# Set transcription language
+L = language.Dutch
 
 
 def chat(msg):
@@ -19,12 +23,12 @@ def chat(msg):
 
 def listen(msg):
     """listen to voice recording"""
-    preview = bot.sendMessage(msg['chat']['id'], "Downloaden...", reply_to_message_id=msg['message_id'])
+    preview = bot.sendMessage(msg['chat']['id'], L.DOWNLOADING, reply_to_message_id=msg['message_id'])
     msg_identifier = telepot.message_identifier(preview)
     file_path_ogg = download(msg)
-    bot.editMessageText(msg_identifier, "Transcoden...")
+    bot.editMessageText(msg_identifier, L.TRANSCODING)
     file_path_wav = transcode(file_path_ogg)
-    bot.editMessageText(msg_identifier, "Transcriben...")
+    bot.editMessageText(msg_identifier, L.TRANSCRIBING)
     text = transcribe(file_path_wav)
     bot.editMessageText(msg_identifier, text)
 
@@ -53,12 +57,12 @@ def transcribe(wav_file: str) -> str:
     with audio_file as source:
         audio = recognizer.record(source)
     try:
-        return recognizer.recognize_google(audio, None, "nl_NL")
+        return recognizer.recognize_google(audio, None, L.LANGUAGE)
     except speech_recognition.UnknownValueError:
-        return "???"
+        return L.UNKNOWN_VALUE
     except speech_recognition.RequestError as e:
         print(e)
-        return "Er ging iets mis, sorry"
+        return L.REQUEST_ERROR
 
 
 if __name__ == '__main__':
