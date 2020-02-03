@@ -11,7 +11,6 @@ from redacted import API_KEY
 
 def chat(msg):
     """on chat message"""
-    time.sleep(0.1)  # only necessary if reply from bot appears before command
     content_type, chat_type, chat_id = telepot.glance(msg)
     if content_type == 'voice':
         pprint(msg)
