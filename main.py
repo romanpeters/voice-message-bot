@@ -15,13 +15,12 @@ def chat(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
     if content_type == 'voice':
         pprint(msg)
-        print(msg['chat']['id'])
         threading.Thread(target=listen, args=[msg]).start()
 
 
 def listen(msg):
     """listen to voice recording"""
-    preview = bot.sendMessage(msg['chat']['id'], "Downloaden...")
+    preview = bot.sendMessage(msg['chat']['id'], "Downloaden...", reply_to_message_id=msg['message_id'])
     msg_identifier = telepot.message_identifier(preview)
     file_path_ogg = download(msg)
     bot.editMessageText(msg_identifier, "Transcoden...")
