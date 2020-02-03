@@ -1,0 +1,4 @@
+PySoundFile==0.9.0.post1
+pytz==2019.3
+SpeechRecognition==3.8.1
+telepot==12.7
