@@ -1,6 +1,7 @@
 import os
 import time
 import datetime
+import threading
 import subprocess
 from pprint import pprint
 import telepot
@@ -14,8 +15,8 @@ def chat(msg):
     content_type, chat_type, chat_id = telepot.glance(msg)
     if content_type == 'voice':
         pprint(msg)
-        print(msg['chat']['id'], msg['voice']['file_id'])
-        listen(msg)
+        print(msg['chat']['id'])
+        threading.Thread(target=listen, args=[msg]).start()
 
 
 def listen(msg):

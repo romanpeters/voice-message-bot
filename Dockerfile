@@ -1,6 +1,6 @@
 FROM python:3.7
 
-COPY . /bot
+ADD . /bot
 WORKDIR /bot
 RUN pip install --no-cache-dir -U -r requirements.txt
 
