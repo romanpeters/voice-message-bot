@@ -1,15 +1,11 @@
 import os
-import time
 import logging
 import datetime
-import threading
 import subprocess
-from pprint import pprint
 import speech_recognition
 import language
-from telegram.ext import Updater, InlineQueryHandler, CommandHandler, MessageHandler, Filters
+from telegram.ext import Updater, MessageHandler, Filters
 from redacted import BOT_TOKEN
-from pprint import pformat
 
 # Set transcription language
 L = language.Dutch
@@ -23,20 +19,21 @@ logger = logging.getLogger(__name__)
 
 def error(update, context):
     """Log Errors caused by Updates."""
-    logger.warning(f'Update "{update}" \n caused error "{context.error}"')
+    logger.info(update)
+    logger.warning(context.error)
 
 
 def listen(update, context):
     """listen to voice recording"""
     bot = context.bot
-    reply = update.message.reply_text(L.DOWNLOADING)
+    chat_id = update.message.chat_id
 
+    bot.sendChatAction(chat_id=chat_id, action="upload_audio")
     file_path_ogg = download(update)
-    bot.edit_message_text(chat_id=update.message.chat_id, message_id=reply.message_id, text=L.TRANSCODING)
+    bot.sendChatAction(chat_id=chat_id, action="typing")
     file_path_wav = transcode(file_path_ogg)
-    bot.edit_message_text(chat_id=update.message.chat_id, message_id=reply.message_id, text=L.TRANSCRIBING)
     text = transcribe(file_path_wav)
-    bot.edit_message_text(chat_id=update.message.chat_id, message_id=reply.message_id, text=text)
+    update.message.reply_text(text)
 
 
 def download(update) -> str:
