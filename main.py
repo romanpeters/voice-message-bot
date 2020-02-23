@@ -1,45 +1,50 @@
 import os
-import time
+import logging
 import datetime
-import threading
 import subprocess
-from pprint import pprint
-import telepot
 import speech_recognition
 import language
-from redacted import API_KEY
+from telegram.ext import Updater, MessageHandler, Filters
+from redacted import BOT_TOKEN
 
 # Set transcription language
 L = language.Dutch
 
 
-def chat(msg):
-    """on chat message"""
-    content_type, chat_type, chat_id = telepot.glance(msg)
-    if content_type == 'voice':
-        pprint(msg)
-        threading.Thread(target=listen, args=[msg]).start()
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
+
+logger = logging.getLogger(__name__)
 
 
-def listen(msg):
+def error(update, context):
+    """Log Errors caused by Updates."""
+    logger.info(update)
+    logger.warning(context.error)
+
+
+def listen(update, context):
     """listen to voice recording"""
-    preview = bot.sendMessage(msg['chat']['id'], L.DOWNLOADING, reply_to_message_id=msg['message_id'])
-    msg_identifier = telepot.message_identifier(preview)
-    file_path_ogg = download(msg)
-    bot.editMessageText(msg_identifier, L.TRANSCODING)
+    bot = context.bot
+    chat_id = update.message.chat_id
+
+    bot.sendChatAction(chat_id=chat_id, action="upload_audio")
+    file_path_ogg = download(update)
+    bot.sendChatAction(chat_id=chat_id, action="typing")
     file_path_wav = transcode(file_path_ogg)
-    bot.editMessageText(msg_identifier, L.TRANSCRIBING)
     text = transcribe(file_path_wav)
-    bot.editMessageText(msg_identifier, text)
+    update.message.reply_text(text)
 
 
-def download(msg) -> str:
+def download(update) -> str:
     """download OGG file"""
-    file_name = '_'.join([msg['from'].get('first_name'),
-                          msg['from'].get('last_name'),
+    user = update.message.from_user
+    file_name = '_'.join([user.first_name,
+                          user.last_name if user.last_name else "",
                           datetime.datetime.now().strftime('%c').replace(' ', '').replace(':', '')])
     file_path = f"voice/{file_name}.ogg".lower()
-    bot.download_file(msg['voice']['file_id'], file_path)
+    voice_file = update.message.voice.get_file()
+    voice_file.download(file_path)
     return file_path
 
 
@@ -65,14 +70,35 @@ def transcribe(wav_file: str) -> str:
         return L.REQUEST_ERROR
 
 
+
+def main():
+    """Start the bot."""
+    # Create the Updater and pass it your bot's token.
+    # Make sure to set use_context=True to use the new context based callbacks
+    # Post version 12 this will no longer be necessary
+    updater = Updater(BOT_TOKEN, use_context=True)
+
+    # Get the dispatcher to register handlers
+    dp = updater.dispatcher
+
+    # # on noncommand i.e message - echo the message on Telegram
+    dp.add_handler(MessageHandler(Filters.voice, listen))
+
+    # log all errors
+    dp.add_error_handler(error)
+
+    # Start the Bot
+    print("Listening...")
+    updater.start_polling()
+    updater.idle()
+
+
 if __name__ == '__main__':
     # Ensure voice/ dir
     if not os.path.exists("voice/"):
         os.makedirs("voice/")
 
-    bot = telepot.Bot(API_KEY)
     recognizer = speech_recognition.Recognizer()
-    bot.message_loop({'chat': chat})
-    print('Listening...')
-    while 1:
-        time.sleep(10)
+
+    main()
+
