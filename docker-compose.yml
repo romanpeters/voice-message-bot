@@ -1,0 +1,8 @@
+version: '3'
+services:
+  url:
+     image: spraakbot:latest
+     container_name: spraakbot
+     restart: always
+#     volumes:
+#       - /var/docker/spraakbot:/bot
