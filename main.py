@@ -10,6 +10,9 @@ from redacted import BOT_TOKEN
 # Set transcription language
 L = language.Dutch
 
+# Add an API key for Google voice recognition
+GOOGLE_TOKEN = None
+
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -62,7 +65,7 @@ def transcribe(wav_file: str) -> str:
     with audio_file as source:
         audio = recognizer.record(source)
     try:
-        return recognizer.recognize_google(audio, None, L.LANGUAGE)
+        return recognizer.recognize_google(audio, GOOGLE_TOKEN, L.LANGUAGE)
     except speech_recognition.UnknownValueError:
         return L.UNKNOWN_VALUE
     except speech_recognition.RequestError as e:
